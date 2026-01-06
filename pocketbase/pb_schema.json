@@ -1,0 +1,257 @@
+{
+  "collections": [
+    {
+      "id": "_pb_users_auth_",
+      "name": "users",
+      "type": "auth",
+      "system": false,
+      "listRule": "id = @request.auth.id",
+      "viewRule": "id = @request.auth.id",
+      "createRule": "",
+      "updateRule": "id = @request.auth.id",
+      "deleteRule": "id = @request.auth.id",
+      "fields": [
+        {
+          "id": "text3208210256",
+          "name": "id",
+          "type": "text",
+          "system": true,
+          "required": true,
+          "primaryKey": true,
+          "autogeneratePattern": "[a-z0-9]{15}",
+          "min": 15,
+          "max": 15,
+          "pattern": "^[a-z0-9]+$"
+        },
+        {
+          "id": "password901924565",
+          "name": "password",
+          "type": "password",
+          "system": true,
+          "required": true,
+          "hidden": true,
+          "min": 8
+        },
+        {
+          "id": "text2504183744",
+          "name": "tokenKey",
+          "type": "text",
+          "system": true,
+          "required": true,
+          "hidden": true,
+          "autogeneratePattern": "[a-zA-Z0-9]{50}",
+          "min": 30,
+          "max": 60
+        },
+        {
+          "id": "email3885137012",
+          "name": "email",
+          "type": "email",
+          "system": true,
+          "required": true
+        },
+        {
+          "id": "bool1547992806",
+          "name": "emailVisibility",
+          "type": "bool",
+          "system": true
+        },
+        {
+          "id": "bool256245529",
+          "name": "verified",
+          "type": "bool",
+          "system": true
+        },
+        {
+          "id": "text1579384326",
+          "name": "name",
+          "type": "text",
+          "system": false,
+          "required": false,
+          "max": 255
+        },
+        {
+          "id": "file376926767",
+          "name": "avatar",
+          "type": "file",
+          "system": false,
+          "required": false,
+          "maxSelect": 1,
+          "mimeTypes": ["image/jpeg", "image/png", "image/svg+xml", "image/gif", "image/webp"]
+        },
+        {
+          "id": "autodate2990389176",
+          "name": "created",
+          "type": "autodate",
+          "system": false,
+          "onCreate": true
+        },
+        {
+          "id": "autodate3332085495",
+          "name": "updated",
+          "type": "autodate",
+          "system": false,
+          "onCreate": true,
+          "onUpdate": true
+        },
+        {
+          "id": "relation_household",
+          "name": "household",
+          "type": "relation",
+          "system": false,
+          "required": false,
+          "collectionId": "households",
+          "maxSelect": 1,
+          "cascadeDelete": false
+        },
+        {
+          "id": "text_display_name",
+          "name": "display_name",
+          "type": "text",
+          "system": false,
+          "required": false,
+          "max": 255
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "id": "households",
+      "name": "households",
+      "type": "base",
+      "system": false,
+      "listRule": "@request.auth.id != '' && (@request.auth.household = id || created_by = @request.auth.id)",
+      "viewRule": "@request.auth.id != '' && (@request.auth.household = id || created_by = @request.auth.id)",
+      "createRule": "@request.auth.id != ''",
+      "updateRule": null,
+      "deleteRule": null,
+      "fields": [
+        {
+          "id": "text3208210256",
+          "name": "id",
+          "type": "text",
+          "system": true,
+          "required": true,
+          "primaryKey": true,
+          "autogeneratePattern": "[a-z0-9]{15}",
+          "min": 15,
+          "max": 15,
+          "pattern": "^[a-z0-9]+$"
+        },
+        {
+          "id": "text1579384326",
+          "name": "name",
+          "type": "text",
+          "system": false,
+          "required": true,
+          "min": 1
+        },
+        {
+          "id": "text1864495378",
+          "name": "invite_code",
+          "type": "text",
+          "system": false,
+          "required": true,
+          "min": 6,
+          "max": 6
+        },
+        {
+          "id": "relation3725765462",
+          "name": "created_by",
+          "type": "relation",
+          "system": false,
+          "required": true,
+          "collectionId": "_pb_users_auth_",
+          "maxSelect": 1,
+          "cascadeDelete": false
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_invite_code ON households (invite_code)"
+      ]
+    },
+    {
+      "id": "todos",
+      "name": "todos",
+      "type": "base",
+      "system": false,
+      "listRule": "@request.auth.id != '' && @request.auth.household = household",
+      "viewRule": "@request.auth.id != '' && @request.auth.household = household",
+      "createRule": "@request.auth.id != '' && @request.auth.household = @request.body.household",
+      "updateRule": "@request.auth.id != '' && @request.auth.household = household",
+      "deleteRule": "@request.auth.id != '' && @request.auth.household = household",
+      "fields": [
+        {
+          "id": "text3208210256",
+          "name": "id",
+          "type": "text",
+          "system": true,
+          "required": true,
+          "primaryKey": true,
+          "autogeneratePattern": "[a-z0-9]{15}",
+          "min": 15,
+          "max": 15,
+          "pattern": "^[a-z0-9]+$"
+        },
+        {
+          "id": "text999008199",
+          "name": "text",
+          "type": "text",
+          "system": false,
+          "required": true,
+          "min": 1
+        },
+        {
+          "id": "date3866337329",
+          "name": "due_date",
+          "type": "date",
+          "system": false,
+          "required": false
+        },
+        {
+          "id": "select2063623452",
+          "name": "status",
+          "type": "select",
+          "system": false,
+          "required": true,
+          "maxSelect": 1,
+          "values": ["pool", "assigned", "done"]
+        },
+        {
+          "id": "relation1422077888",
+          "name": "household",
+          "type": "relation",
+          "system": false,
+          "required": true,
+          "collectionId": "households",
+          "maxSelect": 1,
+          "cascadeDelete": false
+        },
+        {
+          "id": "relation2314121105",
+          "name": "assigned_to",
+          "type": "relation",
+          "system": false,
+          "required": false,
+          "collectionId": "_pb_users_auth_",
+          "maxSelect": 1,
+          "cascadeDelete": false
+        },
+        {
+          "id": "relation3725765462",
+          "name": "created_by",
+          "type": "relation",
+          "system": false,
+          "required": true,
+          "collectionId": "_pb_users_auth_",
+          "maxSelect": 1,
+          "cascadeDelete": false
+        }
+      ],
+      "indexes": []
+    }
+  ]
+}
