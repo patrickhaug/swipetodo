@@ -1,10 +1,19 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import App from './App'
 
+vi.mock('@/lib/pocketbase', () => ({
+  pb: {
+    authStore: {
+      model: null,
+      onChange: vi.fn(() => () => {}),
+    },
+  },
+}))
+
 describe('App', () => {
-  it('renders without crashing', () => {
+  it('redirects to login when not authenticated', () => {
     render(<App />)
-    expect(document.body).toBeInTheDocument()
+    expect(screen.getByText(/swipetodo/i)).toBeInTheDocument()
   })
 })
