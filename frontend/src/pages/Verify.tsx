@@ -28,7 +28,7 @@ export function Verify() {
       const pendingInvite = localStorage.getItem('pendingInviteCode')
       if (pendingInvite) {
         navigate('/join/' + pendingInvite)
-      } else if (!pb.authStore.model?.household) {
+      } else if (!pb.authStore.record?.household) {
         navigate('/setup')
       } else {
         navigate('/')

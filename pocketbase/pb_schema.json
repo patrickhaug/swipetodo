@@ -5,8 +5,8 @@
       "name": "users",
       "type": "auth",
       "system": false,
-      "listRule": "id = @request.auth.id",
-      "viewRule": "id = @request.auth.id",
+      "listRule": "id = @request.auth.id || (household != '' && household = @request.auth.household)",
+      "viewRule": "id = @request.auth.id || (household != '' && household = @request.auth.household)",
       "createRule": "",
       "updateRule": "id = @request.auth.id",
       "deleteRule": "id = @request.auth.id",
@@ -249,6 +249,22 @@
           "collectionId": "_pb_users_auth_",
           "maxSelect": 1,
           "cascadeDelete": false
+        },
+        {
+          "id": "autodate_created",
+          "name": "created",
+          "type": "autodate",
+          "system": false,
+          "onCreate": true,
+          "onUpdate": false
+        },
+        {
+          "id": "autodate_updated",
+          "name": "updated",
+          "type": "autodate",
+          "system": false,
+          "onCreate": true,
+          "onUpdate": true
         }
       ],
       "indexes": []

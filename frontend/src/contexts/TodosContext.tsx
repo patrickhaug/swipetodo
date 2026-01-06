@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useMemo } from 'react'
 import { pb } from '@/lib/pocketbase'
 import { useAuth } from './AuthContext'
-import { Todo } from '@/types'
+import type { Todo } from '@/types'
 
 interface TodosContextType {
   todos: Todo[]
@@ -9,7 +9,7 @@ interface TodosContextType {
   myTodos: Todo[]
   isLoading: boolean
   isConnected: boolean
-  createTodo: (text: string, dueDate?: string) => Promise<void>
+  createTodo: (text: string, dueDate?: string) => Promise<string | undefined>
   assignTo: (todoId: string, userId: string) => Promise<void>
   markDone: (todoId: string) => Promise<void>
   returnToPool: (todoId: string) => Promise<void>
@@ -49,11 +49,11 @@ export function TodosProvider({ children }: { children: ReactNode }) {
 
   const loadTodos = async () => {
     try {
-      const records = await pb.collection('todos').getFullList<Todo>({
-        filter: `household = "${user!.household}"`,
+      const result = await pb.collection('todos').getList<Todo>(1, 200, {
         sort: '-created',
+        $autoCancel: false,
       })
-      setTodos(records)
+      setTodos(result.items)
       setIsConnected(true)
     } catch (err) {
       console.error('Failed to load todos:', err)
@@ -65,8 +65,7 @@ export function TodosProvider({ children }: { children: ReactNode }) {
   const subscribeToTodos = async () => {
     try {
       return await pb.collection('todos').subscribe<Todo>('*', (e) => {
-        if (e.record.household !== user?.household) return
-
+        // PocketBase subscription already filtered by collection rules
         setTodos(current => {
           switch (e.action) {
             case 'create':
@@ -86,14 +85,20 @@ export function TodosProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const createTodo = async (text: string, dueDate?: string) => {
-    await pb.collection('todos').create({
-      text,
-      due_date: dueDate || null,
-      status: 'pool',
-      household: user!.household,
-      created_by: user!.id,
-    })
+  const createTodo = async (text: string, dueDate?: string): Promise<string | undefined> => {
+    try {
+      const record = await pb.collection('todos').create({
+        text,
+        due_date: dueDate || null,
+        status: 'pool',
+        household: user!.household,
+        created_by: user!.id,
+      })
+      return record.id
+    } catch (err) {
+      console.error('Failed to create todo:', err)
+      throw err
+    }
   }
 
   const assignTo = async (todoId: string, userId: string) => {
@@ -110,6 +115,7 @@ export function TodosProvider({ children }: { children: ReactNode }) {
         assigned_to: userId,
       })
     } catch (err) {
+      console.error('Failed to assign todo:', err)
       loadTodos() // Rollback on error
     }
   }
@@ -140,7 +146,7 @@ export function TodosProvider({ children }: { children: ReactNode }) {
     try {
       await pb.collection('todos').update(todoId, {
         status: 'pool',
-        assigned_to: null,
+        assigned_to: '',
       })
     } catch (err) {
       loadTodos() // Rollback on error

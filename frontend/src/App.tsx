@@ -5,8 +5,9 @@ import { Login } from '@/pages/Login'
 import { Verify } from '@/pages/Verify'
 import { Setup } from '@/pages/Setup'
 import { Join } from '@/pages/Join'
-import { Pool } from '@/pages/Pool'
-import { Mine } from '@/pages/Mine'
+import { PoolContent } from '@/pages/Pool'
+import { MineContent } from '@/pages/Mine'
+import { SwipeableLayout } from '@/components/SwipeableLayout'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth()
@@ -18,6 +19,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!user.household) return <Navigate to="/setup" />
 
   return <>{children}</>
+}
+
+function MainApp() {
+  return (
+    <TodosProvider>
+      <SwipeableLayout
+        poolContent={<PoolContent />}
+        mineContent={<MineContent />}
+      />
+    </TodosProvider>
+  )
 }
 
 function App() {
@@ -35,16 +47,12 @@ function App() {
           } />
           <Route path="/" element={
             <ProtectedRoute>
-              <TodosProvider>
-                <Pool />
-              </TodosProvider>
+              <MainApp />
             </ProtectedRoute>
           } />
           <Route path="/mine" element={
             <ProtectedRoute>
-              <TodosProvider>
-                <Mine />
-              </TodosProvider>
+              <MainApp />
             </ProtectedRoute>
           } />
         </Routes>

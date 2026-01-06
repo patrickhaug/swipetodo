@@ -35,7 +35,7 @@ export function Join() {
 
       const household = households.items[0]
 
-      await pb.collection('users').update(pb.authStore.model!.id, {
+      await pb.collection('users').update(pb.authStore.record!.id, {
         household: household.id,
       })
 

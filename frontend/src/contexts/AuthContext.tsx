@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { pb } from '@/lib/pocketbase'
-import { AuthModel } from 'pocketbase'
+import type { RecordModel } from 'pocketbase'
 
 interface AuthContextType {
-  user: AuthModel | null
+  user: RecordModel | null
+  partner: RecordModel | null
   isLoading: boolean
   requestOTP: (email: string) => Promise<{ otpId: string }>
   verifyOTP: (otpId: string, code: string) => Promise<void>
@@ -13,8 +14,30 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthModel | null>(pb.authStore.model)
+  const [user, setUser] = useState<RecordModel | null>(pb.authStore.record)
+  const [partner, setPartner] = useState<RecordModel | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  // Fetch partner when user or household changes
+  useEffect(() => {
+    const fetchPartner = async () => {
+      if (!user?.household) {
+        setPartner(null)
+        return
+      }
+      try {
+        const members = await pb.collection('users').getList(1, 10, {
+          filter: `household = "${user.household}" && id != "${user.id}"`,
+          $autoCancel: false,
+        })
+        setPartner(members.items[0] || null)
+      } catch (err) {
+        console.error('Failed to fetch partner:', err)
+        setPartner(null)
+      }
+    }
+    fetchPartner()
+  }, [user?.id, user?.household])
 
   useEffect(() => {
     setIsLoading(false)
@@ -39,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, requestOTP, verifyOTP, logout }}>
+    <AuthContext.Provider value={{ user, partner, isLoading, requestOTP, verifyOTP, logout }}>
       {children}
     </AuthContext.Provider>
   )

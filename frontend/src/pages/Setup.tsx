@@ -24,10 +24,10 @@ export function Setup() {
       const household = await pb.collection('households').create({
         name,
         invite_code: generateInviteCode(),
-        created_by: pb.authStore.model?.id,
+        created_by: pb.authStore.record?.id,
       })
 
-      await pb.collection('users').update(pb.authStore.model!.id, {
+      await pb.collection('users').update(pb.authStore.record!.id, {
         household: household.id,
       })
 
