@@ -1,0 +1,11 @@
+# PocketBase
+pocketbase/pocketbase
+pocketbase/pb_data/
+
+# Node
+node_modules/
+.env
+.env.local
+
+# Build
+dist/
