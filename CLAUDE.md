@@ -76,8 +76,46 @@ This prevents re-renders during animation from causing visual glitches.
 
 ```typescript
 const { myTodos, markDone } = useTodos()
-const { user, logout } = useAuth()
+const { user, partner, switchUser, logout } = useAuth()
 ```
+
+### Authentication Flow
+
+The app uses a simplified household-based authentication:
+
+1. **Initial Setup**: Enter household name and both users' email addresses
+2. **Auto-Login**: Device remembers the current user via SecureStore
+3. **User Switching**: Switch between household members in Settings (no re-auth needed)
+
+```typescript
+// AuthContext provides:
+const {
+  user,           // Current authenticated user
+  partner,        // Other user in household
+  household,      // Current household
+  authState,      // 'loading' | 'no_household' | 'select_user' | 'authenticated'
+  setupHousehold, // Create new household with both users
+  joinHousehold,  // Join existing household via invite code
+  selectUser,     // Select which user to log in as
+  switchUser,     // Switch to the other household member
+  logout,         // Clear all auth state
+} = useAuth()
+```
+
+Auth flow states:
+- `loading`: Checking stored auth config
+- `no_household`: No household configured - show setup screen
+- `select_user`: Household exists but user not selected
+- `authenticated`: User is logged in with valid household
+
+#### Security Notes
+
+This auth system is designed for **trusted, shared-device contexts** (e.g., a household tablet). Key security considerations:
+
+- **Default Password**: Users are auto-created with a shared default password. This is intentional for the simplified flow but means the system relies on device-level security rather than per-user authentication.
+- **No OAuth Yet**: OAuth providers (Apple/Google) are planned for future versions to add proper authentication for sensitive use cases.
+- **Invite Codes**: Generated using `expo-crypto` for cryptographic randomness (not `Math.random()`).
+- **SQL Injection Prevention**: All PocketBase filters use `pb.filter()` with parameterized queries.
 
 ## PocketBase Collections
 

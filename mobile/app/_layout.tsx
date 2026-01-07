@@ -13,6 +13,7 @@ export default function RootLayout() {
           <Stack.Screen name="login" />
           <Stack.Screen name="verify" />
           <Stack.Screen name="setup" />
+          <Stack.Screen name="settings" options={{ presentation: 'modal' }} />
         </Stack>
       </AuthProvider>
     </GestureHandlerRootView>

@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { View, Text, StyleSheet, Dimensions, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 import { Gesture, GestureDetector } from 'react-native-gesture-handler'
 import Animated, {
   useSharedValue,
@@ -38,6 +39,7 @@ const STACK_SCALE_STEP = 0.06
 
 export default function MineScreen() {
   const insets = useSafeAreaInsets()
+  const router = useRouter()
   const { myTodos, reorder, markDone } = useTodos()
   const { isFocusMode, setFocusMode } = useFocusMode()
 
@@ -127,10 +129,32 @@ export default function MineScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Toggle header */}
       <View style={styles.header}>
-        <FocusToggle
-          morphProgress={morphProgress}
-          onToggle={isFocusMode ? morphToList : morphToFocus}
-        />
+        <View style={styles.headerContent}>
+          <View style={styles.headerSpacer} />
+          <FocusToggle
+            morphProgress={morphProgress}
+            onToggle={isFocusMode ? morphToList : morphToFocus}
+          />
+          <Pressable
+            onPress={() => router.push('/settings')}
+            style={styles.settingsButton}
+          >
+            <Svg width={22} height={22} fill="none" stroke="#8E8A94" viewBox="0 0 24 24">
+              <Path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+              />
+              <Path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </Svg>
+          </Pressable>
+        </View>
       </View>
 
       {/* Morphing items - render back cards first so front card (index 0) is on top */}
@@ -526,8 +550,22 @@ const styles = StyleSheet.create({
   // Header
   header: {
     paddingVertical: 12,
-    alignItems: 'center',
+    paddingHorizontal: 16,
     zIndex: 200,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerSpacer: {
+    width: 40,
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Toggle switch
