@@ -37,6 +37,6 @@ module.exports = [
     },
   },
   {
-    ignores: ['node_modules/', 'dist/', '.expo/', 'coverage/', '*.config.js'],
+    ignores: ['node_modules/', 'dist/', '.expo/', 'coverage/', 'e2e/', 'jest.config.js', 'babel.config.js', 'eslint.config.js', 'metro.config.js'],
   },
 ]
