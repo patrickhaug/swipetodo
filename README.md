@@ -11,31 +11,37 @@ A collaborative task management app for couples and households. Assign tasks wit
 - **Household Sharing**: Create or join households to collaborate
 - **OTP Authentication**: Passwordless email login
 
+## Tech Stack
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Expo | 54 | App framework |
+| React Native | 0.81 | Mobile runtime |
+| Expo Router | 6 | File-based navigation |
+| Reanimated | 4 | 60fps animations |
+| Gesture Handler | 2.28 | Touch gestures |
+| NativeWind | 4 | Tailwind styling |
+| PocketBase | 0.26 | Backend/real-time |
+
 ## Project Structure
 
 ```
 swipetodo/
-├── mobile/           # React Native Expo app (iOS/Android)
-├── frontend/         # Web app (React + Vite)
-├── pocketbase/       # Backend (PocketBase)
+├── mobile/           # React Native Expo app
+│   ├── app/          # Screens (Expo Router)
+│   ├── components/   # Reusable UI components
+│   ├── contexts/     # React Context providers
+│   └── lib/          # Utilities
+├── pocketbase/       # Backend
 └── docs/             # Documentation
 ```
-
-## Tech Stack
-
-| Component | Technology |
-|-----------|------------|
-| Mobile | React Native, Expo SDK 54, Reanimated, Gesture Handler |
-| Web | React, Vite, TypeScript, Tailwind CSS |
-| Backend | PocketBase (SQLite, real-time subscriptions) |
-| Auth | OTP/Magic Links via email |
 
 ## Quick Start
 
 ### Prerequisites
 
 - Node.js 18+
-- PocketBase (included in `pocketbase/`)
+- iOS Simulator / Android Emulator or Expo Go app
 
 ### 1. Start PocketBase
 
@@ -62,15 +68,6 @@ cp .env.example .env  # Edit with your PocketBase URL
 npx expo start
 ```
 
-### 4. Run Web App
-
-```bash
-cd frontend
-npm install
-cp .env.example .env  # Edit with your PocketBase URL
-npm run dev
-```
-
 ## Environment Variables
 
 ### Mobile (`mobile/.env`)
@@ -85,31 +82,28 @@ EXPO_PUBLIC_DEV_USER2_EMAIL=
 EXPO_PUBLIC_DEV_USER2_PASSWORD=
 ```
 
-### Frontend (`frontend/.env`)
+## Development
 
-```env
-VITE_PB_URL=http://localhost:8090
+```bash
+# Start Expo dev server
+cd mobile && npx expo start
+
+# Run on iOS simulator
+npx expo run:ios
+
+# Run on Android emulator
+npx expo run:android
+
+# Type check
+npx tsc --noEmit
+
+# Run tests
+npm test
 ```
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for Coolify/Hetzner deployment instructions.
-
-## Development
-
-```bash
-# Mobile - start Expo dev server
-cd mobile && npx expo start
-
-# Mobile - type check
-cd mobile && npx tsc --noEmit
-
-# Frontend - start Vite dev server
-cd frontend && npm run dev
-
-# Frontend - build for production
-cd frontend && npm run build
-```
+See [DEPLOYMENT.md](DEPLOYMENT.md) for production deployment instructions.
 
 ## License
 

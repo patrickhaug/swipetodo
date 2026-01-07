@@ -1,16 +1,6 @@
 version: '3.8'
 
 services:
-  frontend:
-    build:
-      context: ./frontend
-      args:
-        VITE_PB_URL: http://localhost:8090
-    ports:
-      - "3000:80"
-    depends_on:
-      - pocketbase
-
   pocketbase:
     build:
       context: ./pocketbase
