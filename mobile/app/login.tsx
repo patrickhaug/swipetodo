@@ -102,6 +102,7 @@ export default function LoginScreen() {
 
         <FadeIn delay={200} className="w-full max-w-sm">
           <TextInput
+            testID="email-input"
             placeholder="deine@email.de"
             value={email}
             onChangeText={setEmail}
@@ -118,6 +119,7 @@ export default function LoginScreen() {
           ) : null}
 
           <Pressable
+            testID="continue-button"
             onPress={handleSubmit}
             disabled={isLoading || !email.trim()}
             className={`h-14 rounded-2xl bg-coral items-center justify-center mt-4 ${
