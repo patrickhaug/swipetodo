@@ -23,6 +23,8 @@ jobs:
           cache-dependency-path: mobile/package-lock.json
 
       - name: Install dependencies
+        # --legacy-peer-deps required due to React Native ecosystem peer dep conflicts
+        # (expo-haptics, react-native-reanimated, nativewind have conflicting peer deps)
         run: npm ci --legacy-peer-deps
 
       - name: Type Check

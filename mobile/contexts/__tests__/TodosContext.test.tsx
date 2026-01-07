@@ -3,33 +3,6 @@ import { renderHook, waitFor } from '@testing-library/react-native'
 import { TodosProvider, useTodos } from '../TodosContext'
 import { AuthProvider } from '../AuthContext'
 
-const mockTodos = [
-  {
-    id: 'todo-1',
-    text: 'Buy groceries',
-    status: 'pool',
-    assigned_to: null,
-    household: 'household-1',
-    created_by: 'user-1',
-    sort_order: 0,
-    due_date: null,
-    created: '2024-01-01',
-    updated: '2024-01-01',
-  },
-  {
-    id: 'todo-2',
-    text: 'Walk the dog',
-    status: 'assigned',
-    assigned_to: 'user-1',
-    household: 'household-1',
-    created_by: 'user-1',
-    sort_order: 0,
-    due_date: null,
-    created: '2024-01-01',
-    updated: '2024-01-01',
-  },
-]
-
 describe('TodosContext', () => {
   const wrapper = ({ children }: { children: React.ReactNode }) => (
     <AuthProvider>

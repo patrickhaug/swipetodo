@@ -33,15 +33,17 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }))
 
-// Mock PocketBase
+// Mock PocketBase with reusable mock implementations for easier assertions
+const mockCollectionMethods = {
+  getList: jest.fn().mockResolvedValue({ items: [] }),
+  subscribe: jest.fn().mockResolvedValue(jest.fn()),
+  create: jest.fn().mockResolvedValue({ id: 'new-todo-id' }),
+  update: jest.fn().mockResolvedValue({}),
+}
+
 jest.mock('@/lib/pocketbase', () => ({
   pb: {
-    collection: jest.fn(() => ({
-      getList: jest.fn().mockResolvedValue({ items: [] }),
-      subscribe: jest.fn().mockResolvedValue(jest.fn()),
-      create: jest.fn().mockResolvedValue({ id: 'new-todo-id' }),
-      update: jest.fn().mockResolvedValue({}),
-    })),
+    collection: jest.fn(() => mockCollectionMethods),
     authStore: {
       isValid: false,
       record: null,
