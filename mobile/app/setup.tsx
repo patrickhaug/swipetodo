@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { FadeIn } from '@/components/FadeIn'
@@ -15,6 +16,10 @@ import { Svg, Path } from 'react-native-svg'
 import * as Haptics from 'expo-haptics'
 
 type SetupMode = 'create' | 'join'
+
+const isValidEmail = (email: string) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
+}
 
 export default function SetupScreen() {
   const router = useRouter()
@@ -29,14 +34,19 @@ export default function SetupScreen() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const isValidEmail = (email: string) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
-  }
+  const canCreate = useMemo(
+    () =>
+      householdName.trim() &&
+      isValidEmail(email1) &&
+      isValidEmail(email2) &&
+      email1.trim().toLowerCase() !== email2.trim().toLowerCase(),
+    [householdName, email1, email2]
+  )
 
-  const canCreate =
-    householdName.trim() && isValidEmail(email1) && isValidEmail(email2) && email1.trim().toLowerCase() !== email2.trim().toLowerCase()
-
-  const canJoin = joinCode.trim().length >= 6 && isValidEmail(joinEmail)
+  const canJoin = useMemo(
+    () => joinCode.trim().length >= 6 && isValidEmail(joinEmail),
+    [joinCode, joinEmail]
+  )
 
   const handleCreate = async () => {
     if (!canCreate) return
@@ -146,7 +156,7 @@ export default function SetupScreen() {
                 }`}
               >
                 {isLoading ? (
-                  <View className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <ActivityIndicator color="#fff" />
                 ) : (
                   <Text className="text-white font-semibold text-lg">Beitreten</Text>
                 )}
@@ -254,7 +264,7 @@ export default function SetupScreen() {
               }`}
             >
               {isLoading ? (
-                <View className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <ActivityIndicator color="#fff" />
               ) : (
                 <Text className="text-white font-semibold text-lg">Haushalt erstellen</Text>
               )}

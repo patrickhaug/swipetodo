@@ -108,6 +108,15 @@ Auth flow states:
 - `select_user`: Household exists but user not selected
 - `authenticated`: User is logged in with valid household
 
+#### Security Notes
+
+This auth system is designed for **trusted, shared-device contexts** (e.g., a household tablet). Key security considerations:
+
+- **Default Password**: Users are auto-created with a shared default password. This is intentional for the simplified flow but means the system relies on device-level security rather than per-user authentication.
+- **No OAuth Yet**: OAuth providers (Apple/Google) are planned for future versions to add proper authentication for sensitive use cases.
+- **Invite Codes**: Generated using `expo-crypto` for cryptographic randomness (not `Math.random()`).
+- **SQL Injection Prevention**: All PocketBase filters use `pb.filter()` with parameterized queries.
+
 ## PocketBase Collections
 
 ### `users` (auth collection)

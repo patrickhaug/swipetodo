@@ -22,6 +22,10 @@ export default function SettingsScreen() {
     } catch (err) {
       console.error('Switch failed:', err)
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error)
+      Alert.alert(
+        'Wechsel fehlgeschlagen',
+        'Der Benutzerwechsel konnte nicht durchgeführt werden. Bitte versuche es erneut.'
+      )
     } finally {
       setIsSwitching(false)
     }

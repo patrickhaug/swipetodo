@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
+import * as Crypto from 'expo-crypto'
 import {
   pb,
   initAuth,
@@ -6,9 +7,8 @@ import {
   saveHouseholdConfig,
   clearHouseholdConfig,
   loginOrCreateUser,
-  DEFAULT_USER_PASSWORD,
 } from '@/lib/pocketbase'
-import type { User, Household, HouseholdConfig } from '@/types'
+import type { User, Household } from '@/types'
 
 type AuthState = 'loading' | 'no_household' | 'select_user' | 'authenticated'
 
@@ -114,7 +114,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Load partner (other user in same household)
       if (pb.authStore.record) {
         const result = await pb.collection('users').getList<User>(1, 1, {
-          filter: `household = "${householdId}" && id != "${pb.authStore.record.id}"`,
+          filter: pb.filter('household = {:householdId} && id != {:odId}', {
+            householdId,
+            odId: pb.authStore.record.id,
+          }),
         })
         setPartner(result.items[0] || null)
       }
@@ -127,59 +130,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const normalizedEmail1 = email1.trim().toLowerCase()
     const normalizedEmail2 = email2.trim().toLowerCase()
 
-    // Create/login first user
-    await loginOrCreateUser(normalizedEmail1)
-    const user1 = pb.authStore.record as unknown as User
+    let createdHouseholdId: string | null = null
+    let user1Id: string | null = null
+    let user2Id: string | null = null
 
-    // Generate invite code
-    const inviteCode = generateInviteCode()
+    try {
+      // Create/login first user
+      await loginOrCreateUser(normalizedEmail1)
+      const user1 = pb.authStore.record as unknown as User
+      user1Id = user1.id
 
-    // Create household
-    const newHousehold = await pb.collection('households').create<Household>({
-      name: name.trim(),
-      invite_code: inviteCode,
-      created_by: user1.id,
-    })
+      // Generate invite code using crypto-secure random
+      const inviteCode = await generateInviteCode()
 
-    // Update first user with household
-    await pb.collection('users').update(user1.id, {
-      household: newHousehold.id,
-    })
+      // Create household
+      const newHousehold = await pb.collection('households').create<Household>({
+        name: name.trim(),
+        invite_code: inviteCode,
+        created_by: user1.id,
+      })
+      createdHouseholdId = newHousehold.id
 
-    // Create second user (logout first, then create)
-    pb.authStore.clear()
-    await loginOrCreateUser(normalizedEmail2)
-    const user2 = pb.authStore.record as unknown as User
+      // Update first user with household
+      await pb.collection('users').update(user1.id, {
+        household: newHousehold.id,
+      })
 
-    // Update second user with household
-    await pb.collection('users').update(user2.id, {
-      household: newHousehold.id,
-    })
+      // Create second user (logout first, then create)
+      pb.authStore.clear()
+      await loginOrCreateUser(normalizedEmail2)
+      const user2 = pb.authStore.record as unknown as User
+      user2Id = user2.id
 
-    // Log back in as first user (the one who set it up)
-    pb.authStore.clear()
-    await loginOrCreateUser(normalizedEmail1)
+      // Update second user with household
+      await pb.collection('users').update(user2.id, {
+        household: newHousehold.id,
+      })
 
-    // Save config
-    await saveHouseholdConfig({
-      householdId: newHousehold.id,
-      currentUserEmail: normalizedEmail1,
-    })
+      // Log back in as first user (the one who set it up)
+      pb.authStore.clear()
+      await loginOrCreateUser(normalizedEmail1)
 
-    // Update state
-    setUser(pb.authStore.record as unknown as User)
-    setHousehold(newHousehold)
-    setPartner(user2)
-    setAuthState('authenticated')
+      // Save config
+      await saveHouseholdConfig({
+        householdId: newHousehold.id,
+        currentUserEmail: normalizedEmail1,
+      })
+
+      // Update state
+      setUser(pb.authStore.record as unknown as User)
+      setHousehold(newHousehold)
+      setPartner(user2)
+      setAuthState('authenticated')
+    } catch (err) {
+      // Rollback: clean up partially created resources
+      try {
+        if (createdHouseholdId) {
+          await pb.collection('households').delete(createdHouseholdId)
+        }
+        if (user1Id) {
+          await pb.collection('users').update(user1Id, { household: '' })
+        }
+        if (user2Id) {
+          await pb.collection('users').update(user2Id, { household: '' })
+        }
+      } catch (rollbackErr) {
+        console.error('Rollback failed:', rollbackErr)
+      }
+      throw err
+    }
   }
 
   const joinHousehold = async (inviteCode: string, email: string) => {
     const normalizedEmail = email.trim().toLowerCase()
     const normalizedCode = inviteCode.trim().toUpperCase()
 
-    // Find household by invite code
+    // Find household by invite code (using parameterized filter)
     const households = await pb.collection('households').getList<Household>(1, 1, {
-      filter: `invite_code = "${normalizedCode}"`,
+      filter: pb.filter('invite_code = {:code}', { code: normalizedCode }),
     })
 
     if (households.items.length === 0) {
@@ -188,9 +216,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const existingHousehold = households.items[0]
 
-    // Check if household already has 2 members
+    // Check if household already has 2 members (using parameterized filter)
     const existingMembers = await pb.collection('users').getList<User>(1, 2, {
-      filter: `household = "${existingHousehold.id}"`,
+      filter: pb.filter('household = {:householdId}', { householdId: existingHousehold.id }),
     })
 
     if (existingMembers.items.length >= 2) {
@@ -314,12 +342,13 @@ export function useAuth() {
   return context
 }
 
-// Generate a random 6-character invite code
-function generateInviteCode(): string {
+// Generate a cryptographically secure 6-character invite code
+async function generateInviteCode(): Promise<string> {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // Avoid confusing chars (0/O, 1/I)
+  const randomBytes = await Crypto.getRandomBytesAsync(6)
   let code = ''
   for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
+    code += chars.charAt(randomBytes[i] % chars.length)
   }
   return code
 }

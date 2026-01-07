@@ -104,8 +104,19 @@ export const loginOrCreateUser = async (email: string): Promise<void> => {
   try {
     // Try to login with existing user
     await pb.collection('users').authWithPassword(normalizedEmail, DEFAULT_PASSWORD)
-  } catch {
-    // User doesn't exist, create new one
+  } catch (err: unknown) {
+    // Check if it's an auth failure (400) vs network/server error
+    const isAuthError =
+      err instanceof Error &&
+      'status' in err &&
+      (err as { status: number }).status === 400
+
+    if (!isAuthError) {
+      // Re-throw network errors, rate limits, server errors
+      throw err
+    }
+
+    // Auth failed - user doesn't exist, create new one
     await pb.collection('users').create({
       email: normalizedEmail,
       password: DEFAULT_PASSWORD,
