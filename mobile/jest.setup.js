@@ -1,5 +1,11 @@
 import '@testing-library/jest-native/extend-expect'
 
+// Mock react-native-svg
+jest.mock('react-native-svg', () => ({
+  Svg: 'Svg',
+  Path: 'Path',
+}))
+
 // Mock react-native-reanimated
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock')

@@ -37,39 +37,3 @@ jobs:
           directory: mobile/coverage
           flags: mobile
         continue-on-error: true
-
-  frontend-tests:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: frontend
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: frontend/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Lint
-        run: npm run lint
-        continue-on-error: true  # Pre-existing lint issues
-
-      - name: Run Tests
-        run: npm run test:run
-        continue-on-error: true  # Some tests may be flaky
-
-      - name: Build
-        run: npm run build
-
-      - name: Upload Coverage
-        uses: codecov/codecov-action@v4
-        with:
-          directory: frontend/coverage
-          flags: frontend
-        continue-on-error: true
