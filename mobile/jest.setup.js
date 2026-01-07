@@ -6,12 +6,8 @@ jest.mock('react-native-svg', () => ({
   Path: 'Path',
 }))
 
-// Mock react-native-reanimated
-jest.mock('react-native-reanimated', () => {
-  const Reanimated = require('react-native-reanimated/mock')
-  Reanimated.default.call = () => {}
-  return Reanimated
-})
+// Setup react-native-reanimated for testing (official v4.x approach)
+require('react-native-reanimated').setUpTests()
 
 // Mock expo-haptics
 jest.mock('expo-haptics', () => ({
