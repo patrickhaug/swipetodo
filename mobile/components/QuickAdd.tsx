@@ -68,12 +68,13 @@ export function QuickAdd({ open, onClose, autoAssignToMe }: QuickAddProps) {
       animationType="fade"
       onRequestClose={onClose}
     >
-      <TouchableWithoutFeedback onPress={handleBackdropPress}>
+      <TouchableWithoutFeedback testID="modal-backdrop" onPress={handleBackdropPress}>
         <View className="flex-1 bg-black/40 items-center justify-center px-4">
           <TouchableWithoutFeedback>
             <View className="bg-white rounded-2xl p-4 w-full max-w-sm shadow-xl">
               <View className="flex-row items-center gap-2">
                 <TextInput
+                  testID="quick-add-input"
                   ref={inputRef}
                   placeholder="Neue Aufgabe..."
                   value={text}
@@ -109,6 +110,7 @@ export function QuickAdd({ open, onClose, autoAssignToMe }: QuickAddProps) {
                 </Pressable>
 
                 <Pressable
+                  testID="quick-add-submit"
                   onPress={handleSubmit}
                   disabled={isLoading || !text.trim()}
                   className={`w-12 h-12 rounded-xl bg-coral items-center justify-center ${

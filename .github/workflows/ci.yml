@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  mobile-tests:
+    name: Mobile Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        # --legacy-peer-deps required due to React Native ecosystem peer dep conflicts
+        # (expo-haptics, react-native-reanimated, nativewind have conflicting peer deps)
+        run: npm ci --legacy-peer-deps
+
+      - name: Type Check
+        run: npm run typecheck
+
+      - name: Run Tests
+        run: npm test -- --coverage
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: mobile/coverage
+          flags: mobile
+        continue-on-error: true
