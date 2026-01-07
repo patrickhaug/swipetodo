@@ -5,12 +5,12 @@ Deployment on Hetzner via Coolify.
 ## Prerequisites
 
 - Coolify instance running on Hetzner
-- Domain configured (e.g., `app.domain.de` for frontend, `api.domain.de` for PocketBase)
+- Domain configured (e.g., `api.domain.de` for PocketBase)
 - Git repository with this code
 
 ## Services
 
-### 1. PocketBase (Backend)
+### PocketBase (Backend)
 
 **Coolify Configuration:**
 - Type: Docker
@@ -35,59 +35,53 @@ Configure in PocketBase Admin UI (`https://api.domain.de/_/`):
 1. Deploy PocketBase service
 2. Open `https://api.domain.de/_/`
 3. Create admin account
-4. Import schema (Settings → Import collections) or create manually:
-   - households collection
-   - todos collection
-   - Extend users collection with `household` and `display_name`
+4. Import schema (Settings → Import collections) or run:
+   ```bash
+   ./setup_schema.sh admin@swipetodo.local yourpassword
+   ```
 
-### 2. Frontend
+## Mobile App Deployment
 
-**Coolify Configuration:**
-- Type: Docker
-- Build Pack: Dockerfile
-- Dockerfile Path: `frontend/Dockerfile`
-- Domains: `app.domain.de`
-- Ports: 80
+### Expo/EAS Build
 
-**Build Arguments:**
-- `VITE_PB_URL`: `https://api.domain.de`
+1. Install EAS CLI:
+   ```bash
+   npm install -g eas-cli
+   ```
 
-**Environment Variables:**
-None required (URL is baked in at build time)
+2. Configure EAS:
+   ```bash
+   cd mobile
+   eas build:configure
+   ```
 
-## Deployment Steps
+3. Update `mobile/.env` with production PocketBase URL:
+   ```env
+   EXPO_PUBLIC_POCKETBASE_URL=https://api.domain.de
+   ```
 
-1. **Deploy PocketBase first:**
-   - Create new service in Coolify
-   - Select Docker → Dockerfile
-   - Point to `pocketbase/Dockerfile`
-   - Configure domain and volume
-   - Deploy
+4. Build for iOS/Android:
+   ```bash
+   eas build --platform ios
+   eas build --platform android
+   ```
 
-2. **Configure PocketBase:**
-   - Access admin UI
-   - Create admin account
-   - Configure SMTP for Magic Links
-   - Create/import collections
-
-3. **Deploy Frontend:**
-   - Create new service in Coolify
-   - Select Docker → Dockerfile
-   - Point to `frontend/Dockerfile`
-   - Set `VITE_PB_URL` build argument to PocketBase URL
-   - Configure domain
-   - Deploy
+5. Submit to app stores:
+   ```bash
+   eas submit --platform ios
+   eas submit --platform android
+   ```
 
 ## Updating
-
-**Frontend updates:**
-- Push to repo → Coolify auto-deploys (if configured)
-- Or trigger manual redeploy in Coolify
 
 **PocketBase updates:**
 - Update `PB_VERSION` ARG in Dockerfile
 - Redeploy
 - Note: Data persists in volume
+
+**Mobile app updates:**
+- Push changes to repo
+- Run `eas build` and `eas submit`
 
 ## Troubleshooting
 
@@ -96,14 +90,10 @@ None required (URL is baked in at build time)
 - Verify Resend API key is valid
 - Check sender domain is verified in Resend
 
-**CORS errors:**
-- PocketBase handles CORS automatically for authenticated requests
-- If issues persist, check domain configuration
-
-**Frontend can't connect to PocketBase:**
-- Verify `VITE_PB_URL` build argument is correct
+**Mobile app can't connect to PocketBase:**
+- Verify `EXPO_PUBLIC_POCKETBASE_URL` is correct
 - Check PocketBase is accessible at the configured URL
-- Ensure HTTPS is working for both services
+- Ensure HTTPS is working
 
 ## Local Development
 
@@ -111,9 +101,9 @@ None required (URL is baked in at build time)
 # Start PocketBase
 cd pocketbase && ./start.sh
 
-# Start Frontend
-cd frontend && npm run dev
+# Start Mobile App
+cd mobile && npx expo start
 ```
 
-Frontend: http://localhost:5173
 PocketBase: http://localhost:8090
+Mobile: Expo Go app or simulator

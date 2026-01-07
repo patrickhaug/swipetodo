@@ -4,23 +4,19 @@ This document provides context for AI assistants working on this codebase.
 
 ## Project Overview
 
-SwipeTodo is a collaborative task management app for couples/households. Users swipe cards to assign tasks, with real-time sync via PocketBase. The project has three main components: a React Native mobile app, a React web frontend, and a PocketBase backend.
+SwipeTodo is a React Native Expo app for collaborative task management. Users swipe cards to assign tasks, with real-time sync via PocketBase.
 
-## Architecture
+## Tech Stack
 
-```
-┌─────────────┐     ┌─────────────┐
-│  Mobile App │     │   Web App   │
-│ (Expo/RN)   │     │ (React/Vite)│
-└──────┬──────┘     └──────┬──────┘
-       │                   │
-       └─────────┬─────────┘
-                 │
-         ┌───────▼───────┐
-         │  PocketBase   │
-         │  (Backend)    │
-         └───────────────┘
-```
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Expo | 54 | App framework |
+| React Native | 0.81 | Mobile runtime |
+| Expo Router | 6 | File-based navigation |
+| Reanimated | 4 | Animations |
+| Gesture Handler | 2.28 | Touch gestures |
+| NativeWind | 4 | Tailwind styling |
+| PocketBase | 0.26 | Backend/realtime |
 
 ## Directory Structure
 
@@ -30,43 +26,13 @@ SwipeTodo is a collaborative task management app for couples/households. Users s
 | `mobile/app/` | Screens (Expo Router file-based) |
 | `mobile/components/` | Reusable UI components |
 | `mobile/contexts/` | React Context providers |
-| `frontend/` | React web app (Vite) |
-| `frontend/src/` | Web app source |
+| `mobile/lib/` | Utilities |
 | `pocketbase/` | PocketBase backend |
 | `pocketbase/pb_migrations/` | Database migrations |
 
-## Tech Stack
-
-### Mobile (`mobile/`)
-
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| Expo | 54 | App framework |
-| React Native | 0.81 | Mobile runtime |
-| Expo Router | 6 | File-based navigation |
-| Reanimated | 4 | 60fps animations |
-| Gesture Handler | 2.28 | Touch gestures |
-| NativeWind | 4 | Tailwind styling |
-
-### Frontend (`frontend/`)
-
-| Technology | Purpose |
-|------------|---------|
-| React | UI framework |
-| Vite | Build tool |
-| TypeScript | Type safety |
-| Tailwind CSS | Styling |
-
-### Backend (`pocketbase/`)
-
-| Technology | Purpose |
-|------------|---------|
-| PocketBase | Database, auth, real-time |
-| SQLite | Data storage |
-
 ## Key Patterns
 
-### Animation Pattern (Mobile - Reanimated)
+### Animation Pattern (Reanimated)
 
 ```typescript
 // Shared values for animations
@@ -81,7 +47,7 @@ const style = useAnimatedStyle(() => ({
 progress.value = withSpring(1)
 ```
 
-### Gesture Pattern (Mobile)
+### Gesture Pattern
 
 ```typescript
 const gesture = Gesture.Pan()
@@ -137,13 +103,13 @@ const { user, logout } = useAuth()
 
 ## Common Tasks
 
-### Adding a New Screen (Mobile)
+### Adding a New Screen
 
 1. Create file in `mobile/app/` directory
 2. Export default React component
 3. Navigation handled automatically by Expo Router
 
-### Adding a New Component (Mobile)
+### Adding a New Component
 
 1. Create in `mobile/components/`
 2. Use TypeScript interfaces for props
@@ -157,13 +123,13 @@ const { user, logout } = useAuth()
 
 ## Important Considerations
 
-### Performance (Mobile)
+### Performance
 
 - Use `useMemo` for derived state
 - Use `useCallback` for callbacks passed to children
 - Animations run on UI thread via Reanimated worklets
 
-### Gestures (Mobile)
+### Gestures
 
 - Multiple gestures use `Gesture.Race()` or `Gesture.Simultaneous()`
 - Set `activeOffsetX/Y` to prevent gesture conflicts
@@ -178,20 +144,19 @@ const { user, logout } = useAuth()
 ## Common Commands
 
 ```bash
-# Mobile
 cd mobile
-npx expo start          # Start dev server
-npx tsc --noEmit        # Type check
 
-# Frontend
-cd frontend
-npm run dev             # Start dev server
-npm run build           # Production build
+# Start dev server
+npx expo start
 
-# PocketBase
-cd pocketbase
-./pocketbase serve      # Start server
-./setup_schema.sh       # Setup collections
+# Type check
+npx tsc --noEmit
+
+# Run tests
+npm test
+
+# Lint
+npm run lint
 ```
 
 ## Common Gotchas
@@ -201,11 +166,11 @@ cd pocketbase
 3. **Shared Values**: Read `.value` property, not the SharedValue object
 4. **runOnJS**: Required to call JS functions from worklets
 5. **Keys**: Always use stable keys (like `todo.id`) for lists
-6. **PocketBase Auth**: Token stored in SecureStore (mobile) or localStorage (web)
+6. **PocketBase Auth**: Token stored in SecureStore
 
 ## Styling
 
-### Mobile (NativeWind/Tailwind)
+### NativeWind/Tailwind
 
 ```tsx
 <View className="flex-1 bg-cream items-center">
