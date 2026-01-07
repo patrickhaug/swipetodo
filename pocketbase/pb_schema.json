@@ -251,6 +251,15 @@
           "cascadeDelete": false
         },
         {
+          "id": "number_sort_order",
+          "name": "sort_order",
+          "type": "number",
+          "system": false,
+          "required": false,
+          "min": null,
+          "max": null
+        },
+        {
           "id": "autodate_created",
           "name": "created",
           "type": "autodate",

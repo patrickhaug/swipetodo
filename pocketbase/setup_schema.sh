@@ -163,7 +163,8 @@ JSONEOF
     {"name": "status", "type": "select", "required": true, "values": ["pool", "assigned", "done"], "maxSelect": 1},
     {"name": "household", "type": "relation", "required": true, "maxSelect": 1, "collectionId": "$HOUSEHOLDS_ID"},
     {"name": "assigned_to", "type": "relation", "required": false, "maxSelect": 1, "collectionId": "_pb_users_auth_"},
-    {"name": "created_by", "type": "relation", "required": true, "maxSelect": 1, "collectionId": "_pb_users_auth_"}
+    {"name": "created_by", "type": "relation", "required": true, "maxSelect": 1, "collectionId": "_pb_users_auth_"},
+    {"name": "sort_order", "type": "number", "required": false}
   ]
 }
 JSONEOF
