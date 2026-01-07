@@ -76,8 +76,37 @@ This prevents re-renders during animation from causing visual glitches.
 
 ```typescript
 const { myTodos, markDone } = useTodos()
-const { user, logout } = useAuth()
+const { user, partner, switchUser, logout } = useAuth()
 ```
+
+### Authentication Flow
+
+The app uses a simplified household-based authentication:
+
+1. **Initial Setup**: Enter household name and both users' email addresses
+2. **Auto-Login**: Device remembers the current user via SecureStore
+3. **User Switching**: Switch between household members in Settings (no re-auth needed)
+
+```typescript
+// AuthContext provides:
+const {
+  user,           // Current authenticated user
+  partner,        // Other user in household
+  household,      // Current household
+  authState,      // 'loading' | 'no_household' | 'select_user' | 'authenticated'
+  setupHousehold, // Create new household with both users
+  joinHousehold,  // Join existing household via invite code
+  selectUser,     // Select which user to log in as
+  switchUser,     // Switch to the other household member
+  logout,         // Clear all auth state
+} = useAuth()
+```
+
+Auth flow states:
+- `loading`: Checking stored auth config
+- `no_household`: No household configured - show setup screen
+- `select_user`: Household exists but user not selected
+- `authenticated`: User is logged in with valid household
 
 ## PocketBase Collections
 

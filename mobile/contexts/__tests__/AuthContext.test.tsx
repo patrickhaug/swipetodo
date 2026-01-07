@@ -31,15 +31,17 @@ describe('AuthContext', () => {
     })
   })
 
-  it('provides null user when not authenticated', async () => {
+  it('provides no_household state when not configured', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await waitFor(() => {
       expect(result.current.isLoading).toBe(false)
     })
 
+    expect(result.current.authState).toBe('no_household')
     expect(result.current.user).toBeNull()
     expect(result.current.partner).toBeNull()
+    expect(result.current.household).toBeNull()
   })
 
   it('exposes auth functions', async () => {
@@ -49,13 +51,15 @@ describe('AuthContext', () => {
       expect(result.current.isLoading).toBe(false)
     })
 
-    expect(typeof result.current.requestOTP).toBe('function')
-    expect(typeof result.current.verifyOTP).toBe('function')
+    expect(typeof result.current.setupHousehold).toBe('function')
+    expect(typeof result.current.joinHousehold).toBe('function')
+    expect(typeof result.current.selectUser).toBe('function')
+    expect(typeof result.current.switchUser).toBe('function')
     expect(typeof result.current.logout).toBe('function')
     expect(typeof result.current.refreshUser).toBe('function')
   })
 
-  it('logout clears user state', async () => {
+  it('logout clears user state and config', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper })
 
     await waitFor(() => {
@@ -68,6 +72,23 @@ describe('AuthContext', () => {
 
     expect(result.current.user).toBeNull()
     expect(result.current.partner).toBeNull()
+    expect(result.current.household).toBeNull()
+    expect(result.current.authState).toBe('no_household')
     expect(pb.authStore.clear).toHaveBeenCalled()
+  })
+
+  describe('authState transitions', () => {
+    it('starts in loading state', () => {
+      const { result } = renderHook(() => useAuth(), { wrapper })
+      expect(result.current.authState).toBe('loading')
+    })
+
+    it('transitions to no_household when no config exists', async () => {
+      const { result } = renderHook(() => useAuth(), { wrapper })
+
+      await waitFor(() => {
+        expect(result.current.authState).toBe('no_household')
+      })
+    })
   })
 })

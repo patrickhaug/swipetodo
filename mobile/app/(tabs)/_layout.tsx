@@ -9,9 +9,9 @@ import { Svg, Path } from 'react-native-svg'
 import * as Haptics from 'expo-haptics'
 
 export default function TabLayout() {
-  const { user, isLoading } = useAuth()
+  const { user, authState, isLoading } = useAuth()
 
-  if (isLoading) {
+  if (isLoading || authState === 'loading') {
     return (
       <View style={styles.loadingContainer}>
         <View style={styles.loadingSpinner} />
@@ -19,11 +19,11 @@ export default function TabLayout() {
     )
   }
 
-  if (!user) {
-    return <Redirect href="/login" />
+  if (authState === 'no_household' || authState === 'select_user') {
+    return <Redirect href="/setup" />
   }
 
-  if (!user.household) {
+  if (!user || !user.household) {
     return <Redirect href="/setup" />
   }
 
