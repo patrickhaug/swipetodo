@@ -88,7 +88,7 @@ describe('TodosContext - Business Logic', () => {
   })
 
   describe('assignTo - Assigning task to user', () => {
-    it('updates task with status=assigned and user ID', async () => {
+    it('calls API with status=assigned and user ID', async () => {
       mockGetList.mockResolvedValue({
         items: [{ id: 'todo-1', text: 'Pool task', status: 'pool', assigned_to: null }],
       })
@@ -108,7 +108,7 @@ describe('TodosContext - Business Logic', () => {
       })
     })
 
-    it('moves task from poolTodos to myTodos optimistically', async () => {
+    it('optimistic: moves task to myTodos before API responds', async () => {
       mockGetList.mockResolvedValue({
         items: [{ id: 'todo-1', text: 'Task', status: 'pool', assigned_to: null }],
       })
@@ -123,13 +123,14 @@ describe('TodosContext - Business Logic', () => {
         result.current.assignTo('todo-1', 'user-1')
       })
 
+      // UI updates immediately, even though API hasn't responded
       await waitFor(() => {
         expect(result.current.poolTodos).toHaveLength(0)
         expect(result.current.myTodos).toHaveLength(1)
       })
     })
 
-    it('calculates sort_order from existing todos', async () => {
+    it('calculates sort_order as max + 1 from existing todos', async () => {
       mockGetList.mockResolvedValue({
         items: [
           { id: 'todo-1', text: 'Existing', status: 'assigned', assigned_to: 'user-1', sort_order: 5 },
@@ -154,7 +155,7 @@ describe('TodosContext - Business Logic', () => {
   })
 
   describe('markDone - Completing a task', () => {
-    it('updates task with status=done', async () => {
+    it('calls API with status=done', async () => {
       mockGetList.mockResolvedValue({
         items: [{ id: 'todo-1', text: 'Task', status: 'assigned', assigned_to: 'user-1' }],
       })
@@ -170,7 +171,7 @@ describe('TodosContext - Business Logic', () => {
       expect(mockUpdate).toHaveBeenCalledWith('todo-1', { status: 'done' })
     })
 
-    it('removes task from myTodos optimistically', async () => {
+    it('optimistic: removes from myTodos before API responds', async () => {
       mockGetList.mockResolvedValue({
         items: [{ id: 'todo-1', text: 'Task', status: 'assigned', assigned_to: 'user-1' }],
       })
@@ -183,8 +184,52 @@ describe('TodosContext - Business Logic', () => {
         result.current.markDone('todo-1')
       })
 
+      // UI updates immediately, even though API hasn't responded
       await waitFor(() => {
         expect(result.current.myTodos).toHaveLength(0)
+      })
+    })
+  })
+
+  describe('returnToPool - Unassigning a task', () => {
+    it('calls API with status=pool and clears assigned_to', async () => {
+      mockGetList.mockResolvedValue({
+        items: [{ id: 'todo-1', text: 'Task', status: 'assigned', assigned_to: 'user-1' }],
+      })
+      mockUpdate.mockResolvedValue({})
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.myTodos).toHaveLength(1))
+
+      await act(async () => {
+        await result.current.returnToPool('todo-1')
+      })
+
+      expect(mockUpdate).toHaveBeenCalledWith('todo-1', {
+        status: 'pool',
+        assigned_to: '',
+      })
+    })
+
+    it('optimistic: moves task back to poolTodos before API responds', async () => {
+      mockGetList.mockResolvedValue({
+        items: [{ id: 'todo-1', text: 'Task', status: 'assigned', assigned_to: 'user-1' }],
+      })
+      mockUpdate.mockReturnValue(new Promise(() => {})) // never resolves
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.myTodos).toHaveLength(1))
+
+      expect(result.current.poolTodos).toHaveLength(0)
+
+      act(() => {
+        result.current.returnToPool('todo-1')
+      })
+
+      // UI updates immediately, even though API hasn't responded
+      await waitFor(() => {
+        expect(result.current.myTodos).toHaveLength(0)
+        expect(result.current.poolTodos).toHaveLength(1)
       })
     })
   })
