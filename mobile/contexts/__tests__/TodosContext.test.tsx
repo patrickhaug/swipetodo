@@ -3,6 +3,13 @@ import { renderHook, waitFor, act } from '@testing-library/react-native'
 import { TodosProvider, useTodos } from '../TodosContext'
 import { pb } from '@/lib/pocketbase'
 
+// Mock PocketBase module
+jest.mock('@/lib/pocketbase', () => ({
+  pb: {
+    collection: jest.fn(),
+  },
+}))
+
 // Mock user
 const mockUser = {
   id: 'user-1',
