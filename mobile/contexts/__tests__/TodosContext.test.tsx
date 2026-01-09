@@ -289,4 +289,207 @@ describe('TodosContext - Business Logic', () => {
       expect(result.current.myTodos.map(t => t.id)).toEqual(['a', 'b', 'c'])
     })
   })
+
+  describe('reorder - Drag to reorder tasks', () => {
+    it('optimistic: updates myTodos order immediately', async () => {
+      mockGetList.mockResolvedValue({
+        items: [
+          { id: 'a', text: 'A', status: 'assigned', assigned_to: 'user-1', sort_order: 0 },
+          { id: 'b', text: 'B', status: 'assigned', assigned_to: 'user-1', sort_order: 1 },
+          { id: 'c', text: 'C', status: 'assigned', assigned_to: 'user-1', sort_order: 2 },
+        ],
+      })
+      mockUpdate.mockResolvedValue({})
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.myTodos).toHaveLength(3))
+
+      // Reorder: move C to first position
+      const reordered = [
+        { id: 'c', text: 'C', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 2 },
+        { id: 'a', text: 'A', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 0 },
+        { id: 'b', text: 'B', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 1 },
+      ]
+
+      act(() => {
+        result.current.reorder(reordered)
+      })
+
+      // UI updates immediately with new order
+      expect(result.current.myTodos.map(t => t.id)).toEqual(['c', 'a', 'b'])
+    })
+
+    it('calls API update for each reordered item', async () => {
+      mockGetList.mockResolvedValue({
+        items: [
+          { id: 'a', text: 'A', status: 'assigned', assigned_to: 'user-1', sort_order: 0 },
+          { id: 'b', text: 'B', status: 'assigned', assigned_to: 'user-1', sort_order: 1 },
+        ],
+      })
+      mockUpdate.mockResolvedValue({})
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.myTodos).toHaveLength(2))
+
+      const reordered = [
+        { id: 'b', text: 'B', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 1 },
+        { id: 'a', text: 'A', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 0 },
+      ]
+
+      await act(async () => {
+        result.current.reorder(reordered)
+        // Wait for Promise.all to complete
+        await new Promise(resolve => setTimeout(resolve, 10))
+      })
+
+      expect(mockUpdate).toHaveBeenCalledWith('b', { sort_order: 0 })
+      expect(mockUpdate).toHaveBeenCalledWith('a', { sort_order: 1 })
+    })
+
+    it('preserves pool todos during reorder', async () => {
+      mockGetList.mockResolvedValue({
+        items: [
+          { id: 'pool-1', text: 'Pool', status: 'pool', assigned_to: null },
+          { id: 'a', text: 'A', status: 'assigned', assigned_to: 'user-1', sort_order: 0 },
+        ],
+      })
+      mockUpdate.mockResolvedValue({})
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.myTodos).toHaveLength(1))
+      expect(result.current.poolTodos).toHaveLength(1)
+
+      act(() => {
+        result.current.reorder([
+          { id: 'a', text: 'A', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 0 },
+        ])
+      })
+
+      // Pool todos should still exist
+      expect(result.current.poolTodos).toHaveLength(1)
+      expect(result.current.poolTodos[0].id).toBe('pool-1')
+    })
+  })
+
+  describe('Subscription lifecycle', () => {
+    it('subscribes to todos collection on mount', async () => {
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      expect(mockSubscribe).toHaveBeenCalledWith('*', expect.any(Function))
+    })
+
+    it('unsubscribes on unmount', async () => {
+      const mockUnsubscribe = jest.fn()
+      mockSubscribe.mockResolvedValue(mockUnsubscribe)
+
+      const { result, unmount } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      unmount()
+
+      await waitFor(() => {
+        expect(mockUnsubscribe).toHaveBeenCalled()
+      })
+    })
+
+    it('subscription: handles create event', async () => {
+      let subscriptionCallback: (e: { action: string; record: any }) => void
+
+      mockSubscribe.mockImplementation((_filter, callback) => {
+        subscriptionCallback = callback
+        return Promise.resolve(jest.fn())
+      })
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      // Simulate a create event from PocketBase
+      act(() => {
+        subscriptionCallback({
+          action: 'create',
+          record: { id: 'new-todo', text: 'New', status: 'pool', assigned_to: null },
+        })
+      })
+
+      expect(result.current.poolTodos).toHaveLength(1)
+      expect(result.current.poolTodos[0].id).toBe('new-todo')
+    })
+
+    it('subscription: handles update event', async () => {
+      mockGetList.mockResolvedValue({
+        items: [{ id: 'todo-1', text: 'Original', status: 'pool', assigned_to: null }],
+      })
+
+      let subscriptionCallback: (e: { action: string; record: any }) => void
+
+      mockSubscribe.mockImplementation((_filter, callback) => {
+        subscriptionCallback = callback
+        return Promise.resolve(jest.fn())
+      })
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.poolTodos).toHaveLength(1))
+
+      // Simulate an update event
+      act(() => {
+        subscriptionCallback({
+          action: 'update',
+          record: { id: 'todo-1', text: 'Updated', status: 'pool', assigned_to: null },
+        })
+      })
+
+      expect(result.current.poolTodos[0].text).toBe('Updated')
+    })
+
+    it('subscription: handles delete event', async () => {
+      mockGetList.mockResolvedValue({
+        items: [{ id: 'todo-1', text: 'To delete', status: 'pool', assigned_to: null }],
+      })
+
+      let subscriptionCallback: (e: { action: string; record: any }) => void
+
+      mockSubscribe.mockImplementation((_filter, callback) => {
+        subscriptionCallback = callback
+        return Promise.resolve(jest.fn())
+      })
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.poolTodos).toHaveLength(1))
+
+      // Simulate a delete event
+      act(() => {
+        subscriptionCallback({
+          action: 'delete',
+          record: { id: 'todo-1' },
+        })
+      })
+
+      expect(result.current.poolTodos).toHaveLength(0)
+    })
+  })
+
+  describe('isConnected state', () => {
+    it('starts as false, becomes true after loadTodos succeeds', async () => {
+      const { result } = renderHook(() => useTodos(), { wrapper })
+
+      // Initially loading
+      expect(result.current.isLoading).toBe(true)
+
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      // After successful load, isConnected should be true
+      expect(result.current.isConnected).toBe(true)
+    })
+
+    it('remains false if loadTodos fails', async () => {
+      mockGetList.mockRejectedValue(new Error('Network error'))
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.isLoading).toBe(false))
+
+      // Connection failed
+      expect(result.current.isConnected).toBe(false)
+    })
+  })
 })
