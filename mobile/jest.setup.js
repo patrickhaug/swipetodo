@@ -6,6 +6,22 @@ jest.mock('react-native-svg', () => ({
   Path: 'Path',
 }))
 
+// Mock react-native-gesture-handler for web tests
+jest.mock('react-native-gesture-handler', () => {
+  const View = require('react-native').View
+  return {
+    Gesture: {
+      Pan: () => ({
+        enabled: jest.fn().mockReturnThis(),
+        onUpdate: jest.fn().mockReturnThis(),
+        onEnd: jest.fn().mockReturnThis(),
+      }),
+    },
+    GestureDetector: ({ children }) => children,
+    GestureHandlerRootView: ({ children }) => children,
+  }
+})
+
 // Setup react-native-reanimated for testing (official v4.x approach)
 require('react-native-reanimated').setUpTests()
 
@@ -33,10 +49,10 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }))
 
-// Mock expo-crypto
+// Mock expo-crypto (virtual: true required - native module doesn't exist in Jest environment)
 jest.mock('expo-crypto', () => ({
   getRandomBytesAsync: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3, 4, 5, 6])),
-}))
+}), { virtual: true })
 
 // Mock PocketBase with reusable mock implementations for easier assertions
 const mockCollectionMethods = {
