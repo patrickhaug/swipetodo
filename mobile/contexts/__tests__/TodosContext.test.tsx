@@ -304,19 +304,15 @@ describe('TodosContext - Business Logic', () => {
       const { result } = renderHook(() => useTodos(), { wrapper })
       await waitFor(() => expect(result.current.myTodos).toHaveLength(3))
 
-      // Reorder: move C to first position
-      const reordered = [
-        { id: 'c', text: 'C', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 2 },
-        { id: 'a', text: 'A', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 0 },
-        { id: 'b', text: 'B', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 1 },
-      ]
+      // Reorder: move C to first position (pass current myTodos in new order)
+      const reordered = result.current.myTodos.slice().reverse()
 
       act(() => {
         result.current.reorder(reordered)
       })
 
-      // UI updates immediately with new order
-      expect(result.current.myTodos.map(t => t.id)).toEqual(['c', 'a', 'b'])
+      // UI updates immediately with new order (reversed: c, b, a)
+      expect(result.current.myTodos.map(t => t.id)).toEqual(['c', 'b', 'a'])
     })
 
     it('calls API update for each reordered item', async () => {
@@ -331,10 +327,8 @@ describe('TodosContext - Business Logic', () => {
       const { result } = renderHook(() => useTodos(), { wrapper })
       await waitFor(() => expect(result.current.myTodos).toHaveLength(2))
 
-      const reordered = [
-        { id: 'b', text: 'B', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 1 },
-        { id: 'a', text: 'A', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 0 },
-      ]
+      // Swap order: b first, then a
+      const reordered = result.current.myTodos.slice().reverse()
 
       await act(async () => {
         result.current.reorder(reordered)
@@ -360,9 +354,7 @@ describe('TodosContext - Business Logic', () => {
       expect(result.current.poolTodos).toHaveLength(1)
 
       act(() => {
-        result.current.reorder([
-          { id: 'a', text: 'A', status: 'assigned' as const, assigned_to: 'user-1', sort_order: 0 },
-        ])
+        result.current.reorder(result.current.myTodos)
       })
 
       // Pool todos should still exist
