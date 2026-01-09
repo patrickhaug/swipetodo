@@ -49,7 +49,7 @@ jest.mock('expo-secure-store', () => ({
   deleteItemAsync: jest.fn(),
 }))
 
-// Mock expo-crypto (virtual mock for web environment)
+// Mock expo-crypto (virtual: true required - native module doesn't exist in Jest environment)
 jest.mock('expo-crypto', () => ({
   getRandomBytesAsync: jest.fn().mockResolvedValue(new Uint8Array([1, 2, 3, 4, 5, 6])),
 }), { virtual: true })
