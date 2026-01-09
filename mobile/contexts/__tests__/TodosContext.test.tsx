@@ -361,6 +361,81 @@ describe('TodosContext - Business Logic', () => {
       expect(result.current.poolTodos).toHaveLength(1)
       expect(result.current.poolTodos[0].id).toBe('pool-1')
     })
+
+    it('anti-flicker: suppresses subscription updates during reorder via isReorderingRef', async () => {
+      mockGetList.mockResolvedValue({
+        items: [
+          { id: 'a', text: 'A', status: 'assigned', assigned_to: 'user-1', sort_order: 0 },
+          { id: 'b', text: 'B', status: 'assigned', assigned_to: 'user-1', sort_order: 1 },
+        ],
+      })
+      mockUpdate.mockResolvedValue({})
+
+      // Capture subscription callback to simulate incoming events
+      let subscriptionCallback: (e: { action: string; record: any }) => void
+      mockSubscribe.mockImplementation((_filter, callback) => {
+        subscriptionCallback = callback
+        return Promise.resolve(jest.fn())
+      })
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.myTodos).toHaveLength(2))
+
+      // Reorder: reverse to [b, a]
+      const reordered = result.current.myTodos.slice().reverse()
+
+      act(() => {
+        result.current.reorder(reordered)
+      })
+
+      // Verify optimistic order is applied
+      expect(result.current.myTodos.map(t => t.id)).toEqual(['b', 'a'])
+
+      // Simulate a subscription update event that would normally revert order
+      // isReorderingRef should block this update
+      act(() => {
+        subscriptionCallback({
+          action: 'update',
+          record: { id: 'a', text: 'A', status: 'assigned', assigned_to: 'user-1', sort_order: 0 },
+        })
+      })
+
+      // Order should STILL be [b, a] because isReorderingRef blocks subscription events
+      expect(result.current.myTodos.map(t => t.id)).toEqual(['b', 'a'])
+    })
+
+    it('error recovery: calls loadTodos to recover state when API update fails', async () => {
+      const initialItems = [
+        { id: 'a', text: 'A', status: 'assigned', assigned_to: 'user-1', sort_order: 0 },
+        { id: 'b', text: 'B', status: 'assigned', assigned_to: 'user-1', sort_order: 1 },
+      ]
+
+      mockGetList.mockResolvedValue({ items: initialItems })
+      // First update succeeds, second fails
+      mockUpdate
+        .mockResolvedValueOnce({})
+        .mockRejectedValueOnce(new Error('Network error'))
+
+      const { result } = renderHook(() => useTodos(), { wrapper })
+      await waitFor(() => expect(result.current.myTodos).toHaveLength(2))
+
+      // Clear call count after initial load
+      mockGetList.mockClear()
+
+      // Mock recovery fetch with original order
+      mockGetList.mockResolvedValue({ items: initialItems })
+
+      const reordered = result.current.myTodos.slice().reverse()
+
+      await act(async () => {
+        result.current.reorder(reordered)
+        // Wait for Promise.all to reject and recovery to trigger
+        await new Promise(resolve => setTimeout(resolve, 50))
+      })
+
+      // loadTodos should be called to recover from the failed update
+      expect(mockGetList).toHaveBeenCalled()
+    })
   })
 
   describe('Subscription lifecycle', () => {
